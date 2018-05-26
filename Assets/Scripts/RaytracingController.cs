@@ -7,10 +7,23 @@ public class RaytracingController : MonoBehaviour {
     public ComputeShader RayTraceShader;
 
     private RenderTexture _targetTex;
+    private Camera _camera;
+
+    private void Awake()
+    {
+        _camera = GetComponent<Camera>();
+    }
 
 	private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
+        SetShaderParameters();
         Render(destination);
+    }
+
+    private void SetShaderParameters()
+    {
+        RayTraceShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
+        RayTraceShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
     }
 
     private void Render(RenderTexture dest)
@@ -41,4 +54,5 @@ public class RaytracingController : MonoBehaviour {
             _targetTex.Create();
         }
     }
+
 }
