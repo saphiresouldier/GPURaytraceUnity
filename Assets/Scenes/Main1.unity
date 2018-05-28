@@ -144,6 +144,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RayTraceShader: {fileID: 7200000, guid: 3c15ded771c2ab64fa75e70e399dfe6c, type: 3}
+  SkyboxTex: {fileID: 2800000, guid: 37b882e5b36507241a5c2b10db7f08b0, type: 3}
 --- !u!81 &887671114
 AudioListener:
   m_ObjectHideFlags: 0
