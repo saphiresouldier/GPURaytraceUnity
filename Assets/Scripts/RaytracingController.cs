@@ -7,10 +7,21 @@ public class RaytracingController : MonoBehaviour {
     public ComputeShader RayTraceShader;
     public Texture SkyboxTex;
 
+    [SerializeField]
+    private float _skyboxMultiplicator = 1.0f;
     private RenderTexture _targetTex;
     private Camera _camera;
     private uint _currentSample = 0;
     private Material _addMaterial;
+
+    public float SkyboxMultiplicator
+    {
+        get { return _skyboxMultiplicator; }
+        set {
+            _skyboxMultiplicator = value;
+            RestartSampling();
+        }
+    }
 
     private void Awake()
     {
@@ -21,7 +32,7 @@ public class RaytracingController : MonoBehaviour {
     {
         if (transform.hasChanged)
         {
-            _currentSample = 0;
+            RestartSampling();
             transform.hasChanged = false;
         }
     }
@@ -37,6 +48,7 @@ public class RaytracingController : MonoBehaviour {
         RayTraceShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
         RayTraceShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
         RayTraceShader.SetTexture(0, "_SkyboxTex", SkyboxTex);
+        RayTraceShader.SetFloat("_SkyboxTexFactor", _skyboxMultiplicator);
         RayTraceShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
     }
 
@@ -78,4 +90,8 @@ public class RaytracingController : MonoBehaviour {
         }
     }
 
+    private void RestartSampling()
+    {
+        _currentSample = 0;
+    }
 }

@@ -7,6 +7,7 @@ RWTexture2D<float4> Result;
 float4x4 _CameraToWorld;
 float4x4 _CameraInverseProjection;
 float2 _PixelOffset;
+float _SkyboxTexFactor;
 
 //Skybox Texture
 Texture2D<float4> _SkyboxTex;
@@ -17,6 +18,7 @@ struct Ray
 {
     float3 origin;
     float3 direction;
+	float3 energy;
 };
 
 struct RayHit
@@ -31,6 +33,7 @@ Ray CreateRay(float3 origin, float3 direction)
     Ray ray;
     ray.origin = origin;
     ray.direction = direction;
+	ray.energy = float3(1.0f, 1.0f, 1.0f);
     return ray;
 }
 
@@ -105,16 +108,22 @@ float3 Shade(inout Ray ray, RayHit hit)
 {
 	if (hit.distance < 1.#INF)
 	{
-		//get normal
-		return hit.normal * 0.5f + 0.5f;
+		float3 specular = float3(0.6f, 0.6f, 0.6f);
+		// Reflect the ray and multiply energy with specular reflection
+		ray.origin = hit.position + hit.normal * 0.001f;
+		ray.direction = reflect(ray.direction, hit.normal);
+		ray.energy *= specular;
+		// Return nothing
+		return float3(0.0f, 0.0f, 0.0f);
 	}
 	else
 	{
-		// Write skybox texture samples
-		// https://en.wikipedia.org/wiki/Spherical_coordinate_system#Coordinate_system_conversions
+		// Erase the ray's energy - the sky doesn't reflect anything
+		ray.energy = 0.0f;
+		// Sample the skybox and write it
 		float theta = acos(ray.direction.y) / -PI;
 		float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-		return _SkyboxTex.SampleLevel(sampler_SkyboxTex, float2(phi, theta), 0);
+		return _SkyboxTex.SampleLevel(sampler_SkyboxTex, float2(phi, theta), 0).xyz * _SkyboxTexFactor;
 	}
 }
 
@@ -132,7 +141,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     Ray ray = CreateCameraRay(uv);
 
     //Trace and Shade
-	RayHit hit = Trace(ray);
-	float3 result = Shade(ray, hit);
+	float3 result = float3(0, 0, 0);
+	for (int i = 0; i < 8; i++)
+	{
+		RayHit hit = Trace(ray);
+		result += ray.energy * Shade(ray, hit);
+		if (!any(ray.energy))
+			break;
+	}
+
 	Result[id.xy] = float4(result, 1);
 }
