@@ -6,6 +6,7 @@ public class RaytracingController : MonoBehaviour {
 
     public ComputeShader RayTraceShader;
     public Texture SkyboxTex;
+    public Light DirectionalLight;
 
     [SerializeField]
     private float _skyboxMultiplicator = 1.0f;
@@ -30,10 +31,16 @@ public class RaytracingController : MonoBehaviour {
 
     private void Update()
     {
-        if (transform.hasChanged)
+        DetectTransformChanged(transform);
+        DetectTransformChanged(DirectionalLight.transform);
+    }
+
+    private void DetectTransformChanged(Transform t)
+    {
+        if(t.hasChanged)
         {
             RestartSampling();
-            transform.hasChanged = false;
+            t.hasChanged = false;
         }
     }
 
