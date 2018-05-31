@@ -9,13 +9,24 @@ public class RaytracingController : MonoBehaviour {
 
     private RenderTexture _targetTex;
     private Camera _camera;
+    private uint _currentSample = 0;
+    private Material _addMaterial;
 
     private void Awake()
     {
         _camera = GetComponent<Camera>();
     }
 
-	private void OnRenderImage(RenderTexture source, RenderTexture destination)
+    private void Update()
+    {
+        if (transform.hasChanged)
+        {
+            _currentSample = 0;
+            transform.hasChanged = false;
+        }
+    }
+
+    private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         SetShaderParameters();
         Render(destination);
@@ -26,6 +37,7 @@ public class RaytracingController : MonoBehaviour {
         RayTraceShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
         RayTraceShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
         RayTraceShader.SetTexture(0, "_SkyboxTex", SkyboxTex);
+        RayTraceShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
     }
 
     private void Render(RenderTexture dest)
@@ -40,13 +52,22 @@ public class RaytracingController : MonoBehaviour {
         RayTraceShader.Dispatch(0, threadGroupAmountX, threadGroupAmountY, 1);
 
         //show resulting texture
-        Graphics.Blit(_targetTex, dest);
+        // Blit the result texture to the screen
+        if (_addMaterial == null)
+            _addMaterial = new Material(Shader.Find("Hidden/AddShader"));
+        _addMaterial.SetFloat("_Sample", _currentSample);
+        Graphics.Blit(_targetTex, dest, _addMaterial);
+        _currentSample++;
+        //Graphics.Blit(_targetTex, dest);
     }
 
     private void InitRenderTexture()
     {
         if(_targetTex == null || _targetTex.width != Screen.width || _targetTex.height != Screen.height)
         {
+            //Restart with sample 0
+            _currentSample = 0;
+
             //release old render texture
             if (_targetTex != null) _targetTex.Release();
 
