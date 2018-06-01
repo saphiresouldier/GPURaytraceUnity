@@ -57,6 +57,9 @@ public class RaytracingController : MonoBehaviour {
         RayTraceShader.SetTexture(0, "_SkyboxTex", SkyboxTex);
         RayTraceShader.SetFloat("_SkyboxTexFactor", _skyboxMultiplicator);
         RayTraceShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
+
+        Vector3 l = DirectionalLight.transform.forward;
+        RayTraceShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
     }
 
     private void Render(RenderTexture dest)

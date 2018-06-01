@@ -6,6 +6,7 @@
 RWTexture2D<float4> Result;
 float4x4 _CameraToWorld;
 float4x4 _CameraInverseProjection;
+float4 _DirectionalLight;
 float2 _PixelOffset;
 float _SkyboxTexFactor;
 
@@ -109,12 +110,24 @@ float3 Shade(inout Ray ray, RayHit hit)
 	if (hit.distance < 1.#INF)
 	{
 		float3 specular = float3(0.6f, 0.6f, 0.6f);
+		float3 albedo = float3(0.4f, 0.4f, 0.4f);
 		// Reflect the ray and multiply energy with specular reflection
 		ray.origin = hit.position + hit.normal * 0.001f;
 		ray.direction = reflect(ray.direction, hit.normal);
 		ray.energy *= specular;
-		// Return nothing
-		return float3(0.0f, 0.0f, 0.0f);
+		
+		// Shadow test ray
+		bool shadow = false;
+		Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, -1 * _DirectionalLight.xyz);
+		RayHit shadowHit = Trace(shadowRay);
+		if (shadowHit.distance != 1.#INF)
+		{
+			return float3(0.0f, 0.0f, 0.0f);
+		}
+
+		// Return a diffuse-shaded color
+		return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * albedo;
+
 	}
 	else
 	{
