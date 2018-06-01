@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -144,7 +144,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RayTraceShader: {fileID: 7200000, guid: 3c15ded771c2ab64fa75e70e399dfe6c, type: 3}
-  SkyboxTex: {fileID: 2800000, guid: e3d2a4750391eaa4faaff22c8cd29630, type: 3}
+  SkyboxTex: {fileID: 2800000, guid: 37b882e5b36507241a5c2b10db7f08b0, type: 3}
+  DirectionalLight: {fileID: 966712075}
+  SphereRadius: {x: 3, y: 8}
+  SpheresMax: 100
+  SpherePlacementRadius: 100
+  _skyboxMultiplicator: 1
 --- !u!81 &887671114
 AudioListener:
   m_ObjectHideFlags: 0
