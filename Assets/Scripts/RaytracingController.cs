@@ -10,9 +10,18 @@ struct Sphere
     public Vector3 specular;
 };
 
+struct Triangle
+{
+    public Vector3 v1, v2, v3;
+    public Vector3 normal; //flat shading will do for now
+    public Vector3 albedo;
+    public Vector3 specular;
+};
+
 public class RaytracingController : MonoBehaviour {
 
     public ComputeShader RayTraceShader;
+    public Camera Camera;
     public Texture SkyboxTex;
     public Light DirectionalLight;
 
@@ -23,10 +32,11 @@ public class RaytracingController : MonoBehaviour {
     [SerializeField]
     private float _skyboxMultiplicator = 1.0f;
     private RenderTexture _targetTex;
-    private Camera _camera;
     private uint _currentSample = 0;
     private Material _addMaterial;
+
     private ComputeBuffer _sphereBuffer;
+    private ComputeBuffer _triangleBuffer;
 
     public float SkyboxMultiplicator
     {
@@ -39,13 +49,14 @@ public class RaytracingController : MonoBehaviour {
 
     private void Awake()
     {
-        _camera = GetComponent<Camera>();
+        //if (Camera == null) Camera = Camera.main;
     }
 
     private void OnEnable()
     {
         _currentSample = 0;
         SetupSphereScene();
+        SetupTriangleScene();
     }
 
     private void Update()
@@ -103,6 +114,52 @@ public class RaytracingController : MonoBehaviour {
         _sphereBuffer.SetData(spheres);
     }
 
+    private void SetupTriangleScene()
+    {
+        List<Triangle> tris = GetSceneTriangles();
+        
+        // Assign to compute buffer, 72 is byte size of sphere struct in memory
+        _triangleBuffer = new ComputeBuffer(tris.Count, 72);
+        _triangleBuffer.SetData(tris);
+    }
+
+    private List<Triangle> GetSceneTriangles()
+    {
+        List<Triangle> triangles = new List<Triangle>();
+
+        // Add a number of random spheres
+        for (int i = 0; i < SpheresMax; i++)
+        {
+            Triangle tri = new Triangle();
+
+            float radius = SphereRadius.x + Random.value * (SphereRadius.y - SphereRadius.x);
+            Vector2 randomPos = Random.insideUnitCircle * SpherePlacementRadius;
+            Vector3 position = new Vector3(randomPos.x, radius, randomPos.y);
+            tri.v1 = Random.onUnitSphere * radius + position;
+            tri.v2 = Random.onUnitSphere * radius + position;
+            tri.v3 = Random.onUnitSphere * radius + position;
+            tri.normal = ComputeTriangleNormal(tri.v1, tri.v2, tri.v3);
+
+            // Albedo and specular color
+            Color color = Random.ColorHSV();
+            bool metal = Random.value < 0.5f;
+            tri.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
+            tri.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
+
+            // Add the sphere to the list
+            triangles.Add(tri);
+        }
+
+        return triangles;
+    }
+
+    private Vector3 ComputeTriangleNormal(Vector3 v1, Vector3 v2, Vector3 v3)
+    {
+        Vector3 v3v1 = v3 - v1;
+        Vector3 v2v1 = v2 - v1;
+        return Vector3.Cross(v2v1, v3v1).normalized;
+    }
+
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         SetShaderParameters();
@@ -111,14 +168,15 @@ public class RaytracingController : MonoBehaviour {
 
     private void SetShaderParameters()
     {
-        RayTraceShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
-        RayTraceShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
+        RayTraceShader.SetMatrix("_CameraToWorld", Camera.cameraToWorldMatrix);
+        RayTraceShader.SetMatrix("_CameraInverseProjection", Camera.projectionMatrix.inverse);
         RayTraceShader.SetTexture(0, "_SkyboxTex", SkyboxTex);
         RayTraceShader.SetFloat("_SkyboxTexFactor", _skyboxMultiplicator);
         RayTraceShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
         Vector3 l = DirectionalLight.transform.forward;
         RayTraceShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
         RayTraceShader.SetBuffer(0, "_Spheres", _sphereBuffer);
+        RayTraceShader.SetBuffer(0, "_Triangles", _triangleBuffer);
     }
 
     private void Render(RenderTexture dest)

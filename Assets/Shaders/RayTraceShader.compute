@@ -174,18 +174,28 @@ void IntersectTriangle(Ray ray, inout RayHit bestHit, Triangle tri)
 RayHit Trace(Ray ray)
 {
     RayHit bestHit = CreateRayHit();
+
+    //intersect ground plane
     IntersectGroundPlane(ray, bestHit);
+
+    //intersect debug triangle
     Triangle t = CreateTriangle();
     IntersectTriangle(ray, bestHit, t);
-    //IntersectSphere(ray, bestHit, float4(0.0f, 3.0f, 0.0f, 1.0f));
-    //IntersectSphere(ray, bestHit, float4(0.0f, 2.0f, 0.0f, 1.0f));
-    //IntersectSphere(ray, bestHit, float4(0.0f, 3.0f, 1.0f, 1.0f));
 
-    uint numSpheres, stride;
-    _Spheres.GetDimensions(numSpheres, stride);
+    //intersect spheres
+    uint numSpheres, strideSpheres;
+    _Spheres.GetDimensions(numSpheres, strideSpheres);
     for (uint i = 0; i < numSpheres; i++)
     {
        // IntersectSphere(ray, bestHit, _Spheres[i]);
+    }
+
+    //intersect triangles
+    uint numTriangles, strideTriangles;
+    _Triangles.GetDimensions(numTriangles, strideTriangles);
+    for (uint j = 0; j < numSpheres; j++)
+    {
+       IntersectTriangle(ray, bestHit, _Triangles[j]);
     }
 
     return bestHit;
