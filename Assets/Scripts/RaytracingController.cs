@@ -49,7 +49,7 @@ public class RaytracingController : MonoBehaviour {
 
     private void Awake()
     {
-        //if (Camera == null) Camera = Camera.main;
+        if (Camera == null) Camera = Camera.main;
     }
 
     private void OnEnable()
@@ -61,7 +61,7 @@ public class RaytracingController : MonoBehaviour {
 
     private void Update()
     {
-        DetectTransformChanged(transform);
+        DetectTransformChanged(Camera.transform);
         DetectTransformChanged(DirectionalLight.transform);
     }
 
