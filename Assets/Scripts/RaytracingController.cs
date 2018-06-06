@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-struct Sphere
+public struct Sphere
 {
     public Vector3 position;
     public float radius;
@@ -10,7 +10,7 @@ struct Sphere
     public Vector3 specular;
 };
 
-struct Triangle
+public struct Triangle
 {
     public Vector3 v1, v2, v3;
     public Vector3 normal; //flat shading will do for now
@@ -116,38 +116,45 @@ public class RaytracingController : MonoBehaviour {
 
     private void SetupTriangleScene()
     {
-        List<Triangle> tris = GetSceneTriangles();
+        List<Triangle> tris = GetSceneTriangles(false);
         
         // Assign to compute buffer, 72 is byte size of sphere struct in memory
         _triangleBuffer = new ComputeBuffer(tris.Count, 72);
         _triangleBuffer.SetData(tris);
     }
 
-    private List<Triangle> GetSceneTriangles()
+    private List<Triangle> GetSceneTriangles(bool generated = false)
     {
         List<Triangle> triangles = new List<Triangle>();
 
-        // Add a number of random spheres
-        for (int i = 0; i < SpheresMax; i++)
+        if(generated)
         {
-            Triangle tri = new Triangle();
+            // Add a number of random spheres
+            for (int i = 0; i < SpheresMax; i++)
+            {
+                Triangle tri = new Triangle();
 
-            float radius = SphereRadius.x + Random.value * (SphereRadius.y - SphereRadius.x);
-            Vector2 randomPos = Random.insideUnitCircle * SpherePlacementRadius;
-            Vector3 position = new Vector3(randomPos.x, radius, randomPos.y);
-            tri.v1 = Random.onUnitSphere * radius + position;
-            tri.v2 = Random.onUnitSphere * radius + position;
-            tri.v3 = Random.onUnitSphere * radius + position;
-            tri.normal = ComputeTriangleNormal(tri.v1, tri.v2, tri.v3);
+                float radius = SphereRadius.x + Random.value * (SphereRadius.y - SphereRadius.x);
+                Vector2 randomPos = Random.insideUnitCircle * SpherePlacementRadius;
+                Vector3 position = new Vector3(randomPos.x, radius, randomPos.y);
+                tri.v1 = Random.onUnitSphere * radius + position;
+                tri.v2 = Random.onUnitSphere * radius + position;
+                tri.v3 = Random.onUnitSphere * radius + position;
+                tri.normal = ComputeTriangleNormal(tri.v1, tri.v2, tri.v3);
 
-            // Albedo and specular color
-            Color color = Random.ColorHSV();
-            bool metal = Random.value < 0.5f;
-            tri.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
-            tri.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
+                // Albedo and specular color
+                Color color = Random.ColorHSV();
+                bool metal = Random.value < 0.5f;
+                tri.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
+                tri.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
 
-            // Add the sphere to the list
-            triangles.Add(tri);
+                // Add the sphere to the list
+                triangles.Add(tri);
+            }
+        }
+        else //Get actual Unity scene triangles
+        {
+            triangles = GetSceneMeshes.Instance.GetSceneTriangles();
         }
 
         return triangles;

@@ -161,7 +161,7 @@ void IntersectTriangle(Ray ray, inout RayHit bestHit, Triangle tri)
         return;
 
     double dist = dot(e2, q) * inv_det; 
-    if (dist > EPSILON)
+    if (dist > EPSILON && dist < bestHit.distance)
     {
         bestHit.distance = dist;
         bestHit.normal = tri.normal;
