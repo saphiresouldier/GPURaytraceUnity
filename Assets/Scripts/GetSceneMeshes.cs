@@ -45,7 +45,7 @@ public class GetSceneMeshes : Singleton<GetSceneMeshes> {
             Vector3[] vertices = m.vertices;
             //Vector2[] uvs = m.uv; //TODO: Necessary for texture support later
 
-            Debug.Log("It consists of " + vertices.Length + " vertices and " + triangles.Length + " triangles!");
+            Debug.Log("It consists of " + vertices.Length + " vertices and " + triangles.Length + " triangle indices, which amounts to " + triangles.Length / 3.0f + " triangles!");
             for(int i = 0; i < triangles.Length; i += 3)
             {
                 Triangle t = new Triangle();

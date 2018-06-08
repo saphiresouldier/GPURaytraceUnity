@@ -117,7 +117,8 @@ public class RaytracingController : MonoBehaviour {
     private void SetupTriangleScene()
     {
         List<Triangle> tris = GetSceneTriangles(false);
-        
+        Debug.Log("Got triangles from MeshFilters, _triangleBuffer contains " + tris.Count + " triangles!");
+
         // Assign to compute buffer, 72 is byte size of sphere struct in memory
         _triangleBuffer = new ComputeBuffer(tris.Count, 72);
         _triangleBuffer.SetData(tris);
