@@ -6,14 +6,18 @@ public struct Sphere
 {
     public Vector3 position;
     public float radius;
-    public Vector3 albedo;
-    public Vector3 specular;
+    public RaytraceMaterial material;
 };
 
 public struct Triangle
 {
     public Vector3 v1, v2, v3;
     public Vector3 normal; //flat shading will do for now
+    public RaytraceMaterial material;
+};
+
+public struct RaytraceMaterial
+{
     public Vector3 albedo;
     public Vector3 specular;
 };
@@ -81,6 +85,7 @@ public class RaytracingController : MonoBehaviour {
         for (int i = 0; i < SpheresMax; i++)
         {
             Sphere sphere = new Sphere();
+            sphere.material = new RaytraceMaterial();
 
             // Radius and radius
             sphere.radius = SphereRadius.x + Random.value * (SphereRadius.y - SphereRadius.x);
@@ -100,8 +105,8 @@ public class RaytracingController : MonoBehaviour {
             // Albedo and specular color
             Color color = Random.ColorHSV();
             bool metal = Random.value < 0.5f;
-            sphere.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
-            sphere.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
+            sphere.material.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
+            sphere.material.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
             
             // Add the sphere to the list
             spheres.Add(sphere);
@@ -134,7 +139,7 @@ public class RaytracingController : MonoBehaviour {
             for (int i = 0; i < SpheresMax; i++)
             {
                 Triangle tri = new Triangle();
-
+                tri.material = new RaytraceMaterial();
                 float radius = SphereRadius.x + Random.value * (SphereRadius.y - SphereRadius.x);
                 Vector2 randomPos = Random.insideUnitCircle * SpherePlacementRadius;
                 Vector3 position = new Vector3(randomPos.x, radius, randomPos.y);
@@ -146,8 +151,8 @@ public class RaytracingController : MonoBehaviour {
                 // Albedo and specular color
                 Color color = Random.ColorHSV();
                 bool metal = Random.value < 0.5f;
-                tri.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
-                tri.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
+                tri.material.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
+                tri.material.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
 
                 // Add the sphere to the list
                 triangles.Add(tri);

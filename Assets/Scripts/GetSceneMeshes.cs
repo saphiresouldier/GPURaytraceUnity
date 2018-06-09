@@ -53,8 +53,9 @@ public class GetSceneMeshes : Singleton<GetSceneMeshes> {
                 t.v2 = r.transform.localToWorldMatrix.MultiplyPoint3x4(vertices[triangles[i + 1]]);
                 t.v3 = r.transform.localToWorldMatrix.MultiplyPoint3x4(vertices[triangles[i + 2]]);
                 t.normal = ComputeTriangleNormal(t.v1, t.v2, t.v3);
-                t.albedo = new Vector3(0.4f, 0.4f, 0.4f);
-                t.specular = new Vector3(0.8f, 0.8f, 0.8f);
+                t.material = new RaytraceMaterial(); //TODO: Get material properties from Unity material shader
+                t.material.albedo = new Vector3(0.4f, 0.4f, 0.4f);
+                t.material.specular = new Vector3(0.8f, 0.8f, 0.8f);
 
                 tris.Add(t);
             }

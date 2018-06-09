@@ -32,20 +32,24 @@ struct RayHit
     float3 specular;
 };
 
+struct RaytraceMaterial
+{
+	float3 albedo;
+	float3 specular;
+};
+
 struct Sphere
 {
     float3 position;
     float radius;
-    float3 albedo;
-    float3 specular;
+	RaytraceMaterial mat;
 };
 
 struct Triangle
 {
     float3 v1, v2, v3;
     float3 normal; //flat shading will do for now
-    float3 albedo;
-    float3 specular;
+	RaytraceMaterial mat;
 };
 
 //Structured Buffers
@@ -88,11 +92,17 @@ RayHit CreateRayHit()
     return hit;
 }
 
+RaytraceMaterial CreateMaterial()
+{
+	RaytraceMaterial mat;
+	mat.albedo = float3(0.4f, 0.4f, 0.4f);
+	mat.specular = float3(0.8f, 0.8f, 0.8f);
+}
+
 Triangle CreateTriangle()
 {
     Triangle t;
-    t.albedo = float3(0.4f, 0.4f, 0.4f);
-    t.specular = float3(0.8f, 0.8f, 0.8f);
+	t.mat = CreateMaterial();
     t.v1 = float3(1.0f, 1.0f, 3.0f);
     t.v2 = float3(0.0f, 3.0f, 3.0f);
     t.v3 = float3(-1.0f, 1.0f, 3.0f);
@@ -132,8 +142,8 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere)
 	    bestHit.distance = t;
 	    bestHit.position = ray.origin + t * ray.direction;
 	    bestHit.normal = normalize(bestHit.position - sphere.position);
-        bestHit.albedo = sphere.albedo;
-        bestHit.specular = sphere.specular;
+        bestHit.albedo = sphere.mat.albedo;
+        bestHit.specular = sphere.mat.specular;
     }
 }
 
@@ -166,8 +176,8 @@ void IntersectTriangle(Ray ray, inout RayHit bestHit, Triangle tri)
         bestHit.distance = dist;
         bestHit.normal = tri.normal;
         bestHit.position = ray.origin - ray.direction * bestHit.distance;
-        bestHit.albedo = tri.albedo;
-        bestHit.specular = tri.specular;
+        bestHit.albedo = tri.mat.albedo;
+        bestHit.specular = tri.mat.specular;
     }
 }
 
