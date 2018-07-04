@@ -23,19 +23,18 @@ struct Ray
 	float3 energy;
 };
 
-struct RayHit
-{
-	float3 position;
-	float distance;
-	float3 normal;
-    float3 albedo;
-    float3 specular;
-};
-
 struct RaytraceMaterial
 {
 	float3 albedo;
 	float3 specular;
+};
+
+struct RayHit
+{
+	float3 position;
+	double distance;
+	float3 normal;
+	RaytraceMaterial mat;
 };
 
 struct Sphere
@@ -48,7 +47,7 @@ struct Sphere
 struct Triangle
 {
     float3 v1, v2, v3;
-    float3 normal; //flat shading will do for now
+    float3 normal; //flat shading will do for now, smooth shading requires vertex normals to be passed
 	RaytraceMaterial mat;
 };
 
@@ -80,23 +79,24 @@ Ray CreateCameraRay(float2 uv)
     return CreateRay(origin, direction);
 }
 
+RaytraceMaterial CreateMaterial()
+{
+	RaytraceMaterial mat;
+	mat.albedo = float3(0.4f, 0.4f, 0.4f);
+	mat.specular = float3(0.8f, 0.8f, 0.8f);
+
+	return mat;
+}
+
 RayHit CreateRayHit()
 {
     RayHit hit;
     hit.position = float3(0.0f, 0.0f, 0.0f);
     hit.distance = 1.#INF;
     hit.normal = float3(0.0f, 0.0f, 0.0f);
-    hit.albedo = float3(0.0f, 0.0f, 0.0f);
-    hit.specular = float3(0.0f, 0.0f, 0.0f);
+	hit.mat = CreateMaterial();
 
     return hit;
-}
-
-RaytraceMaterial CreateMaterial()
-{
-	RaytraceMaterial mat;
-	mat.albedo = float3(0.4f, 0.4f, 0.4f);
-	mat.specular = float3(0.8f, 0.8f, 0.8f);
 }
 
 Triangle CreateTriangle()
@@ -121,8 +121,8 @@ void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
         bestHit.distance = t;
         bestHit.position = ray.origin + t * ray.direction;
         bestHit.normal = float3(0.0f, 1.0f, 0.0f);
-        bestHit.albedo = float3(0.4f, 0.4f, 0.4f);
-        bestHit.specular = float3(0.8f, 0.8f, 0.8f);
+        bestHit.mat.albedo = float3(0.4f, 0.4f, 0.4f);
+        bestHit.mat.specular = float3(0.8f, 0.8f, 0.8f);
     }
 }
 
@@ -142,8 +142,8 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere)
 	    bestHit.distance = t;
 	    bestHit.position = ray.origin + t * ray.direction;
 	    bestHit.normal = normalize(bestHit.position - sphere.position);
-        bestHit.albedo = sphere.mat.albedo;
-        bestHit.specular = sphere.mat.specular;
+        bestHit.mat.albedo = sphere.mat.albedo;
+        bestHit.mat.specular = sphere.mat.specular;
     }
 }
 
@@ -175,9 +175,9 @@ void IntersectTriangle(Ray ray, inout RayHit bestHit, Triangle tri)
     {
         bestHit.distance = dist;
         bestHit.normal = tri.normal;
-        bestHit.position = ray.origin - ray.direction * bestHit.distance;
-        bestHit.albedo = tri.mat.albedo;
-        bestHit.specular = tri.mat.specular;
+        bestHit.position = ray.origin - ray.direction * bestHit.distance; //implicit conversion double -> float happening here!
+        bestHit.mat.albedo = tri.mat.albedo;
+        bestHit.mat.specular = tri.mat.specular;
     }
 }
 
@@ -193,20 +193,20 @@ RayHit Trace(Ray ray)
     //IntersectTriangle(ray, bestHit, t);
 
     //intersect spheres
-    /*uint numSpheres, strideSpheres;
+    uint numSpheres, strideSpheres;
     _Spheres.GetDimensions(numSpheres, strideSpheres);
     for (uint i = 0; i < numSpheres; i++)
     {
        IntersectSphere(ray, bestHit, _Spheres[i]);
-    }*/
+    }
 
     //intersect triangles
-    uint numTriangles, strideTriangles;
+    /*uint numTriangles, strideTriangles;
     _Triangles.GetDimensions(numTriangles, strideTriangles);
     for (uint j = 0; j < numTriangles; j++)
     {
        IntersectTriangle(ray, bestHit, _Triangles[j]);
-    }
+    }*/
 
     return bestHit;
 }
@@ -215,8 +215,8 @@ float3 Shade(inout Ray ray, RayHit hit)
 {
     if (hit.distance < 1.#INF)
     {
-        float3 specular = hit.specular;
-        float3 albedo = hit.albedo;
+        float3 specular = hit.mat.specular;
+        float3 albedo = hit.mat.albedo;
 		// Reflect the ray and multiply energy with specular reflection
         ray.origin = hit.position + hit.normal * 0.001f;
         ray.direction = reflect(ray.direction, hit.normal);
