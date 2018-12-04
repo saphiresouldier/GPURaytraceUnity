@@ -245,6 +245,7 @@ MonoBehaviour:
   SphereRadius: {x: 3, y: 8}
   SpheresMax: 100
   SpherePlacementRadius: 100
+  RandomSeed: 0
   _skyboxMultiplicator: 1
 --- !u!1 &887671112
 GameObject:
@@ -283,6 +284,7 @@ MonoBehaviour:
   SphereRadius: {x: 3, y: 8}
   SpheresMax: 100
   SpherePlacementRadius: 100
+  RandomSeed: 69
   _skyboxMultiplicator: 1
 --- !u!81 &887671114
 AudioListener:

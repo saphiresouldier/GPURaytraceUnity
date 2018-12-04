@@ -33,9 +33,12 @@ public class RaytracingController : MonoBehaviour {
     public uint SpheresMax = 100;
     public float SpherePlacementRadius = 100.0f;
 
+    public int RandomSeed = 0;
+
     [SerializeField]
     private float _skyboxMultiplicator = 1.0f;
     private RenderTexture _targetTex;
+    private RenderTexture _convergingTex;
     private uint _currentSample = 0;
     private Material _addMaterial;
 
@@ -54,6 +57,8 @@ public class RaytracingController : MonoBehaviour {
     private void Awake()
     {
         if (Camera == null) Camera = Camera.main;
+
+        Random.InitState(RandomSeed); 
     }
 
     private void OnEnable()
@@ -208,7 +213,8 @@ public class RaytracingController : MonoBehaviour {
         if (_addMaterial == null)
             _addMaterial = new Material(Shader.Find("Hidden/AddShader"));
         _addMaterial.SetFloat("_Sample", _currentSample);
-        Graphics.Blit(_targetTex, dest, _addMaterial);
+        Graphics.Blit(_targetTex, _convergingTex, _addMaterial);
+        Graphics.Blit(_convergingTex, dest);
         _currentSample++;
         //Graphics.Blit(_targetTex, dest);
     }
