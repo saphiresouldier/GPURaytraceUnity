@@ -279,7 +279,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RayTraceShader: {fileID: 7200000, guid: 3c15ded771c2ab64fa75e70e399dfe6c, type: 3}
   Camera: {fileID: 887671116}
-  SkyboxTex: {fileID: 2800000, guid: e3d2a4750391eaa4faaff22c8cd29630, type: 3}
+  SkyboxTex: {fileID: 2800000, guid: c7aa95f56c8d3454ebe5f260c4326b1a, type: 3}
   DirectionalLight: {fileID: 966712075}
   SphereRadius: {x: 3, y: 8}
   SpheresMax: 100

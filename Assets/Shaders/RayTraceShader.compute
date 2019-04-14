@@ -16,6 +16,10 @@ SamplerState sampler_SkyboxTex;
 static const float PI = 3.14159265f;
 static const float EPSILON = 0.00001f;
 
+//randomness
+float2 _CurPixel;
+float _Seed;
+
 struct Ray
 {
     float3 origin;
@@ -50,6 +54,18 @@ struct Triangle
     float3 normal; //flat shading will do for now, smooth shading requires vertex normals to be passed
 	RaytraceMaterial mat;
 };
+
+float rand()
+{
+	float result = frac(sin(_Seed / 100.0f * dot(_CurPixel, float2(12.9898f, 78.233f))) * 43758.5453f);
+	_Seed += 1.0f;
+	return result;
+}
+
+float sdot(float3 i, float3 o, float f = 1.0f)
+{
+	return saturate(dot(i, o) * f);
+}
 
 //Structured Buffers
 StructuredBuffer<Sphere> _Spheres;
@@ -109,6 +125,31 @@ Triangle CreateTriangle()
     t.normal = float3(0.0f, 0.0f, -1.0f);
 
     return t;
+}
+
+float3x3 GetTangentSpace(float3 normal)
+{
+	//choose helper vector based on axis alignment
+	float3 axisHelper = float3(1, 0, 0);
+	if (abs(normal.x) > 0.99f) axisHelper = float3(0, 0, 1);
+
+	//Generate tangent vectors
+	float3 tangent = normalize(cross(normal, axisHelper));
+	float3 binormal = normalize(cross(normal, tangent));
+
+	return float3x3(tangent, binormal, normal);
+}
+
+float3 SampleHemisphere(float3 normal)
+{
+	// Uniformly sample hemisphere direction
+	float cosTheta = rand();
+	float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta));
+	float phi = 2 * PI * rand();
+	float3 tangentSpaceDir = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+	// Transform direction to world space
+	return mul(tangentSpaceDir, GetTangentSpace(normal));
 }
 
 void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
@@ -219,21 +260,35 @@ float3 Shade(inout Ray ray, RayHit hit)
         float3 albedo = hit.mat.albedo;
 
 		// Reflect the ray and multiply energy with specular reflection
-        ray.origin = hit.position + hit.normal * 0.001f;
-        ray.direction = reflect(ray.direction, hit.normal);
-        ray.energy *= specular;
-		
-		// Shadow test ray
-        bool shadow = false;
-        Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, -1 * _DirectionalLight.xyz);
-        RayHit shadowHit = Trace(shadowRay);
-        if (shadowHit.distance != 1.#INF)
-        {
-            return float3(0.0f, 0.0f, 0.0f);
-        }
+        //ray.origin = hit.position + hit.normal * 0.001f;
+        
+		//witted phong
+		//ray.direction = reflect(ray.direction, hit.normal);
+		//ray.energy *= specular;
 
-		// Return a diffuse-shaded color
-        return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * albedo;
+		//// Shadow test ray
+		//bool shadow = false;
+		//Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, -1 * _DirectionalLight.xyz);
+		//RayHit shadowHit = Trace(shadowRay);
+		//if (shadowHit.distance != 1.#INF)
+		//{
+		//	return float3(0.0f, 0.0f, 0.0f);
+		//}
+
+		//// Return a diffuse-shaded color
+		//return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * albedo;
+
+		//pathtraced lambert + phong
+		ray.origin = hit.position + hit.normal * 0.001f;
+		ray.direction = SampleHemisphere(hit.normal);
+		float3 reflected = reflect(ray.direction, hit.normal);
+
+		float3 alpha = 15.0f;
+		float3 diff = 2 * min(1.0f - specular, albedo);
+		float3 spec = specular * (alpha + 2) * pow(sdot(ray.direction, reflected), alpha);
+
+		ray.energy *= (diff + spec) * sdot(hit.normal, ray.direction);
+		return 0.0f;
 
     }
     else
@@ -246,23 +301,27 @@ float3 Shade(inout Ray ray, RayHit hit)
         float theta = acos(ray.direction.y) / -PI;
         float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
         return _SkyboxTex.SampleLevel(sampler_SkyboxTex, float2(phi, theta), 0).xyz * _SkyboxTexFactor;
-    }
+	}
 }
 
     [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-// Get the dimensions of the RenderTexture
+
+	//initialize current pixel for randomness
+	_CurPixel = id.xy;
+
+	// Get the dimensions of the RenderTexture
     uint width, height;
     Result.GetDimensions(width, height);
 
-// Transform pixel to [-1,1] range
+	// Transform pixel to [-1,1] range
     float2 uv = float2((id.xy + _PixelOffset) / float2(width, height) * 2.0f - 1.0f);
 
-// Get a ray for the UVs
+	// Get a ray for the UVs
     Ray ray = CreateCameraRay(uv);
 
-//Trace and Shade
+	//Trace and Shade
     float3 result = float3(0, 0, 0);
     for (int i = 0; i < 8; i++)
     {

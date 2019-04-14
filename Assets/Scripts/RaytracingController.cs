@@ -68,6 +68,12 @@ public class RaytracingController : MonoBehaviour {
         SetupTriangleScene();
     }
 
+    private void OnDisable()
+    {
+        _sphereBuffer.Release();
+        _triangleBuffer.Release();
+    }
+
     private void Update()
     {
         DetectTransformChanged(Camera.transform);
@@ -155,7 +161,7 @@ public class RaytracingController : MonoBehaviour {
 
                 // Albedo and specular color
                 Color color = Random.ColorHSV();
-                bool metal = Random.value < 0.5f;
+                bool metal = Random.value < 0.0f; //TODO
                 tri.material.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
                 tri.material.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
 
@@ -178,6 +184,7 @@ public class RaytracingController : MonoBehaviour {
         return Vector3.Cross(v2v1, v3v1).normalized;
     }
 
+    //Main render function
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         SetShaderParameters();
@@ -190,6 +197,7 @@ public class RaytracingController : MonoBehaviour {
         RayTraceShader.SetMatrix("_CameraInverseProjection", Camera.projectionMatrix.inverse);
         RayTraceShader.SetTexture(0, "_SkyboxTex", SkyboxTex);
         RayTraceShader.SetFloat("_SkyboxTexFactor", _skyboxMultiplicator);
+        RayTraceShader.SetFloat("_Seed", Random.value);
         RayTraceShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
         Vector3 l = DirectionalLight.transform.forward;
         RayTraceShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
@@ -233,6 +241,20 @@ public class RaytracingController : MonoBehaviour {
             _targetTex = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
             _targetTex.enableRandomWrite = true;
             _targetTex.Create();
+        }
+
+        if (_convergingTex == null || _convergingTex.width != Screen.width || _convergingTex.height != Screen.height)
+        {
+            //Restart with sample 0
+            _currentSample = 0;
+
+            //release old render texture
+            if (_convergingTex != null) _convergingTex.Release();
+
+            //Create render texture for raytracing
+            _convergingTex = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+            _convergingTex.enableRandomWrite = true;
+            _convergingTex.Create();
         }
     }
 
