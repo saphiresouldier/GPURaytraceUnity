@@ -20,6 +20,8 @@ public struct RaytraceMaterial
 {
     public Vector3 albedo;
     public Vector3 specular;
+    public float smoothness;
+    public float emission;
 };
 
 public class RaytracingController : MonoBehaviour {
@@ -116,17 +118,20 @@ public class RaytracingController : MonoBehaviour {
             // Albedo and specular color
             Color color = Random.ColorHSV();
             bool metal = Random.value < 0.5f;
+            bool emissive = Random.value < 0.2f; //TODO: optimization potential, skip metal computation of emissive
             sphere.material.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
             sphere.material.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
-            
+            sphere.material.smoothness = Random.value;
+            sphere.material.emission = emissive ? 1.0f : 0.0f;
+
             // Add the sphere to the list
             spheres.Add(sphere);
 
         SkipSphere:
             continue;
         }
-        // Assign to compute buffer, 40 is byte size of sphere struct in memory
-        _sphereBuffer = new ComputeBuffer(spheres.Count, 40);
+        // Assign to compute buffer, 48 is byte size of sphere struct in memory
+        _sphereBuffer = new ComputeBuffer(spheres.Count, 48);
         _sphereBuffer.SetData(spheres);
     }
 
@@ -135,8 +140,8 @@ public class RaytracingController : MonoBehaviour {
         List<Triangle> tris = GetSceneTriangles(false);
         Debug.Log("Got triangles from MeshFilters, _triangleBuffer contains " + tris.Count + " triangles!");
 
-        // Assign to compute buffer, 72 is byte size of sphere struct in memory
-        _triangleBuffer = new ComputeBuffer(tris.Count, 72);
+        // Assign to compute buffer, 80 is byte size of triangle struct in memory
+        _triangleBuffer = new ComputeBuffer(tris.Count, 80);
         _triangleBuffer.SetData(tris);
     }
 

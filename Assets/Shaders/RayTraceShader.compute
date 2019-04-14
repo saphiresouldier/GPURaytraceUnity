@@ -31,6 +31,8 @@ struct RaytraceMaterial
 {
 	float3 albedo;
 	float3 specular;
+	float smoothness;
+	float emission;
 };
 
 struct RayHit
@@ -100,6 +102,8 @@ RaytraceMaterial CreateMaterial()
 	RaytraceMaterial mat;
 	mat.albedo = float3(0.4f, 0.4f, 0.4f);
 	mat.specular = float3(0.8f, 0.8f, 0.8f);
+	mat.smoothness = 0.5f;
+	mat.emission = 0.0f;
 
 	return mat;
 }
@@ -157,6 +161,11 @@ float energy(float3 color)
 	return dot(color, 1.0f / 3.0f);
 }
 
+float SmoothnessToPhongAlpha(float smoothness)
+{
+	return pow(1000.0f, smoothness * smoothness);
+}
+
 void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
 {
 //calculate groundplane hit distance
@@ -169,6 +178,8 @@ void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
         bestHit.normal = float3(0.0f, 1.0f, 0.0f);
         bestHit.mat.albedo = float3(0.4f, 0.4f, 0.4f);
         bestHit.mat.specular = float3(0.1f, 0.1f, 0.1f);
+		bestHit.mat.smoothness = 0.5f;
+		bestHit.mat.emission = 0.0f;
     }
 }
 
@@ -190,6 +201,8 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere)
 	    bestHit.normal = normalize(bestHit.position - sphere.position);
         bestHit.mat.albedo = sphere.mat.albedo;
         bestHit.mat.specular = sphere.mat.specular;
+		bestHit.mat.smoothness = sphere.mat.smoothness;
+		bestHit.mat.emission = sphere.mat.emission;
     }
 }
 
@@ -224,6 +237,8 @@ void IntersectTriangle(Ray ray, inout RayHit bestHit, Triangle tri)
         bestHit.position = ray.origin - ray.direction * bestHit.distance; //implicit conversion double -> float happening here!
         bestHit.mat.albedo = tri.mat.albedo;
         bestHit.mat.specular = tri.mat.specular;
+		bestHit.mat.smoothness = tri.mat.smoothness;
+		bestHit.mat.emission = tri.mat.emission;
     }
 }
 
@@ -296,7 +311,7 @@ float3 Shade(inout Ray ray, RayHit hit)
 		if (roulette < specularChance)
 		{
 			//specular reflection
-			float alpha = 15.0f;
+			float alpha = SmoothnessToPhongAlpha(hit.mat.smoothness);
 			ray.origin = hit.position + hit.normal * 0.001f;
 			ray.direction = SampleHemisphere(reflect(ray.direction, hit.normal), alpha);
 			float f = (alpha + 2) / (alpha + 1);
@@ -310,7 +325,7 @@ float3 Shade(inout Ray ray, RayHit hit)
 			ray.energy *= (1.0f / diffuseChance) * albedo;
 		}
 		
-		return 0.0f;
+		return hit.mat.emission;
 
     }
     else
