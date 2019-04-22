@@ -36,7 +36,7 @@ public class GetSceneMeshes : Singleton<GetSceneMeshes> {
 
         List<Triangle> tris = new List<Triangle>();
 
-        foreach(MeshFilter r in _meshRenderers)
+        foreach (MeshFilter r in _meshRenderers)
         {
             Debug.Log("Found object with Meshfilter: " + r.gameObject.name);
             Mesh m = r.mesh;
@@ -53,9 +53,15 @@ public class GetSceneMeshes : Singleton<GetSceneMeshes> {
                 t.v2 = r.transform.localToWorldMatrix.MultiplyPoint3x4(vertices[triangles[i + 1]]);
                 t.v3 = r.transform.localToWorldMatrix.MultiplyPoint3x4(vertices[triangles[i + 2]]);
                 t.normal = ComputeTriangleNormal(t.v1, t.v2, t.v3);
-                t.material = new RaytraceMaterial(); //TODO: Get material properties from Unity material shader
-                t.material.albedo = new Vector3(0.4f, 0.4f, 0.4f);
-                t.material.specular = new Vector3(0.8f, 0.8f, 0.8f);
+
+                t.material = new RaytraceMaterial();  //TODO: Reuse materials
+
+                Material mat = r.GetComponent<Renderer>().sharedMaterial; ;
+                if (mat == null) Debug.Log("Error getting material!");
+                t.material.albedo = new Vector3(mat.GetColor("_Albedo").r, mat.GetColor("_Albedo").g, mat.GetColor("_Albedo").b);
+                t.material.specular = new Vector3(mat.GetColor("_Specular").r, mat.GetColor("_Specular").g, mat.GetColor("_Specular").b);
+                t.material.smoothness = mat.GetFloat("_Smoothness");
+                t.material.emission = mat.GetFloat("_Emission");
 
                 tris.Add(t);
             }

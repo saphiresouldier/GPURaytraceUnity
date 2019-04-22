@@ -254,20 +254,20 @@ RayHit Trace(Ray ray)
     //IntersectTriangle(ray, bestHit, t);
 
     //intersect spheres
-    uint numSpheres, strideSpheres;
+    /*uint numSpheres, strideSpheres;
     _Spheres.GetDimensions(numSpheres, strideSpheres);
     for (uint i = 0; i < numSpheres; i++)
     {
        IntersectSphere(ray, bestHit, _Spheres[i]);
-    }
+    }*/
 
     //intersect triangles
-    /*uint numTriangles, strideTriangles;
+    uint numTriangles, strideTriangles;
     _Triangles.GetDimensions(numTriangles, strideTriangles);
     for (uint j = 0; j < numTriangles; j++)
     {
        IntersectTriangle(ray, bestHit, _Triangles[j]);
-    }*/
+    }
 
     return bestHit;
 }
